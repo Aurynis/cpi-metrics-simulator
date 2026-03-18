@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloud Integration — Simulador de Consumo de Licença | Aurynis</title>
+<meta name="description" content="Simulador interativo de consumo de messages da capability Cloud Integration do SAP Integration Suite. Compare patterns de integração e projete economia de licença. Baseado no SAP Note 2942344.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#fafaf8;--bg2:#f2f1ed;--bg3:#eae9e4;
+  --tx:#1a1a19;--tx2:#5f5e5a;--tx3:#8a8985;
+  --bd:#d3d1c7;--bd2:#b4b2a9;
+  --green:#1d9e75;--green-bg:#e1f5ee;--green-tx:#085041;
+  --red:#c0392b;--red-bg:#fcebeb;--red-tx:#791f1f;
+  --amber:#ba7517;--amber-bg:#faeeda;--amber-tx:#633806;
+  --blue:#185fa5;--blue-bg:#e6f1fb;--blue-tx:#0c447c;
+  --purple:#534ab7;--purple-bg:#eeedfe;--purple-tx:#3c3489;
+  --radius:10px;--font:'Segoe UI','Helvetica Neue',Arial,sans-serif
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1c1c1a;--bg2:#2c2c2a;--bg3:#3a3a37;
+  --tx:#e8e6de;--tx2:#b4b2a9;--tx3:#888780;
+  --bd:#444441;--bd2:#5f5e5a;
+  --green-bg:#04342c;--green-tx:#9fe1cb;
+  --red-bg:#501313;--red-tx:#f7c1c1;
+  --amber-bg:#412402;--amber-tx:#fac775;
+  --blue-bg:#042c53;--blue-tx:#b5d4f4;
+  --purple-bg:#26215c;--purple-tx:#cecbf6
+}}
+body{font-family:var(--font);background:var(--bg);color:var(--tx);line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:2.5rem 1.5rem 3rem}
+header{margin-bottom:2.5rem}
+header h1{font-size:1.5rem;font-weight:600;letter-spacing:-0.02em;margin-bottom:0.25rem}
+header p{font-size:0.9rem;color:var(--tx2)}
+.badge{display:inline-block;font-size:0.7rem;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--purple-bg);color:var(--purple-tx);vertical-align:middle;margin-left:8px;letter-spacing:0.02em}
+h2{font-size:1.1rem;font-weight:600;margin:2rem 0 1rem;letter-spacing:-0.01em}
+h2 .num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--bg3);font-size:0.75rem;font-weight:600;margin-right:8px;color:var(--tx2)}
+
+.controls{display:flex;flex-direction:column;gap:0.75rem;margin-bottom:2rem;padding:1.25rem;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--bd)}
+.ctrl{display:flex;align-items:center;gap:12px;font-size:0.85rem;color:var(--tx2)}
+.ctrl label{min-width:160px;flex-shrink:0}
+.ctrl input[type=range]{flex:1;accent-color:var(--purple);height:4px;-webkit-appearance:none;appearance:none;background:var(--bd);border-radius:2px;outline:none}
+.ctrl input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--purple);cursor:pointer;border:none}
+.ctrl input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--purple);cursor:pointer;border:none}
+.ctrl .out{min-width:60px;text-align:right;font-weight:600;font-size:0.85rem;color:var(--tx);font-variant-numeric:tabular-nums}
+
+.svg-mobile{display:none}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:1.5rem}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:1.5rem}
+@media(max-width:640px){
+  .wrap{padding:1.5rem 1rem 2rem}
+  header h1{font-size:1.25rem}
+  .grid3{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}
+  .ctrl{flex-wrap:wrap;gap:6px}
+  .ctrl label{min-width:100%;font-weight:600;color:var(--tx)}
+  .ctrl input[type=range]{flex:1;min-width:0}
+  .ctrl .out{min-width:auto}
+  .val{font-size:1.25rem}
+  footer{flex-direction:column;gap:4px;text-align:center}
+  .svg-desktop{display:none}
+  .svg-mobile{display:block}
+}
+
+.card{background:var(--bg2);border-radius:var(--radius);padding:1.25rem;border:0.5px solid var(--bd);position:relative;overflow:hidden}
+.card h3{font-size:0.85rem;font-weight:600;margin-bottom:4px}
+.card .sub{font-size:0.78rem;color:var(--tx3);margin-bottom:0.75rem}
+.card .hint{font-size:0.7rem;color:var(--tx3);font-style:italic;margin-bottom:0.75rem}
+.card .sep{border-top:0.5px solid var(--bd);margin:0.75rem 0;padding-top:0.75rem}
+.card .metric-label{font-size:0.78rem;color:var(--tx2);margin-bottom:2px;display:flex;align-items:center;gap:6px}
+.val{font-size:1.5rem;font-weight:600;margin-bottom:0.5rem;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+.val.bad{color:var(--red)}.val.good{color:var(--green)}.val.warn{color:var(--amber)}.val.muted{color:var(--tx2)}
+
+.tag{display:inline-block;font-size:0.65rem;font-weight:600;padding:1px 6px;border-radius:3px;letter-spacing:0.03em;text-transform:uppercase;vertical-align:middle}
+.tag-r{background:var(--red-bg);color:var(--red-tx)}
+.tag-g{background:var(--green-bg);color:var(--green-tx)}
+.tag-a{background:var(--amber-bg);color:var(--amber-tx)}
+.tag-b{background:var(--blue-bg);color:var(--blue-tx)}
+
+.card.highlight{border-color:var(--green);border-width:1.5px}
+.card.danger{border-color:var(--red);border-width:1.5px}
+
+.summary{padding:1.25rem;background:var(--blue-bg);border-radius:var(--radius);margin-bottom:2rem;font-size:0.85rem;color:var(--blue-tx);line-height:1.7}
+.summary strong{font-weight:600}
+
+.footnotes{margin-top:2.5rem;padding-top:1.5rem;border-top:0.5px solid var(--bd)}
+.footnotes h3{font-size:0.9rem;font-weight:600;margin-bottom:0.75rem}
+.footnotes p,.footnotes li{font-size:0.78rem;color:var(--tx2);line-height:1.7;margin-bottom:0.5rem}
+.footnotes a{color:var(--blue);text-decoration:none}
+.footnotes a:hover{text-decoration:underline}
+.footnotes ul{padding-left:1.25rem}
+.footnotes .note-box{background:var(--bg2);border-radius:var(--radius);padding:1rem 1.25rem;margin:1rem 0;border-left:3px solid var(--amber);font-size:0.78rem;line-height:1.7;color:var(--tx2)}
+.footnotes .note-box strong{color:var(--tx)}
+
+footer{margin-top:3rem;padding-top:1.5rem;border-top:0.5px solid var(--bd);display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:var(--tx3)}
+footer a{color:var(--tx3);text-decoration:none}
+footer a:hover{color:var(--tx)}
+.scenario{margin-bottom:2rem;padding:0 0 1.5rem;border-bottom:0.5px solid var(--bd)}
+.scenario p{font-size:0.88rem;color:var(--tx2);line-height:1.7}
+.scenario p strong{color:var(--tx);font-weight:600}
+.scenario p em{font-style:normal;font-weight:600;color:var(--tx)}
+.scenario-foot{font-size:0.82rem;color:var(--tx3);margin-top:0.5rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Cloud Integration — simulador de consumo de licença <span class="badge">Beta</span></h1>
+  <p>Compare três patterns de design de integração e projete o impacto no consumo de messages da capability Cloud Integration do SAP Integration Suite. Baseado nas regras de metering do SAP Note 2942344 v23.</p>
+</header>
+
+<div class="scenario">
+  <p><strong>O cenário:</strong> seu ERP precisa enviar documentos (pedidos, notas, materiais) para um sistema externo via Cloud Integration. A forma como o iFlow é desenhado determina quantas <em>messages</em> são consumidas da sua cota de licença — e o custo pode variar em até 99% dependendo do pattern escolhido.</p>
+  <svg class="svg-desktop" width="100%" viewBox="0 0 720 310" style="margin:1.25rem 0 0.5rem">
+    <style>
+      .st{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif}
+      .sl{font-size:11px;fill:var(--tx2)}.sh{font-size:12px;fill:var(--tx);font-weight:600}
+      .sb{font-size:10px;fill:var(--tx3)}
+      .line-a{stroke:var(--red);stroke-width:1.5}.line-b{stroke:var(--amber);stroke-width:1.5}.line-c{stroke:var(--green);stroke-width:1.5}
+      .box-sys{fill:var(--bg3);stroke:var(--bd);stroke-width:0.75;rx:6}
+      .box-cpi{fill:var(--purple-bg);stroke:var(--bd);stroke-width:0.75;rx:6}
+    </style>
+    <defs>
+      <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 2L8 5L2 8" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round"/></marker>
+    </defs>
+
+    <text class="st sh" x="360" y="18" text-anchor="middle">Três formas de enviar 100 documentos</text>
+
+    <!-- Systems -->
+    <rect class="box-sys" x="20" y="36" width="80" height="32"/>
+    <text class="st sl" x="60" y="56" text-anchor="middle">ERP</text>
+    <rect class="box-cpi" x="310" y="36" width="100" height="32"/>
+    <text class="st sl" x="360" y="56" text-anchor="middle">Cloud Integration</text>
+    <rect class="box-sys" x="620" y="36" width="80" height="32"/>
+    <text class="st sl" x="660" y="56" text-anchor="middle">Sistema externo</text>
+
+    <!-- Lifelines -->
+    <line x1="60" y1="68" x2="60" y2="300" stroke="var(--bd)" stroke-width="0.5" stroke-dasharray="3 3"/>
+    <line x1="360" y1="68" x2="360" y2="300" stroke="var(--bd)" stroke-width="0.5" stroke-dasharray="3 3"/>
+    <line x1="660" y1="68" x2="660" y2="300" stroke="var(--bd)" stroke-width="0.5" stroke-dasharray="3 3"/>
+
+    <!-- Pattern A -->
+    <text class="st sh" x="16" y="100" style="fill:var(--red)">A</text>
+    <text class="st sb" x="32" y="100">doc-a-doc</text>
+    <line x1="60" y1="105" x2="355" y2="105" class="line-a" marker-end="url(#ar)"/>
+    <line x1="365" y1="105" x2="655" y2="105" class="line-a" marker-end="url(#ar)"/>
+    <text class="st sb" x="200" y="100">x100 chamadas</text>
+    <text class="st sb" x="500" y="100">x100 envios</text>
+    <rect x="595" y="90" width="56" height="20" rx="3" fill="var(--red-bg)" stroke="none"/>
+    <text class="st sb" x="623" y="103" text-anchor="middle" style="fill:var(--red-tx);font-weight:600">100 msgs</text>
+
+    <!-- Pattern B -->
+    <text class="st sh" x="16" y="170" style="fill:var(--amber)">B</text>
+    <text class="st sb" x="32" y="170">batch + split</text>
+    <line x1="60" y1="175" x2="355" y2="175" class="line-b" marker-end="url(#ar)"/>
+    <text class="st sb" x="200" y="170">1 lote</text>
+    <rect x="340" y="182" width="40" height="14" rx="2" fill="var(--amber-bg)" stroke="var(--bd)" stroke-width="0.5"/>
+    <text class="st sb" x="360" y="193" text-anchor="middle" style="fill:var(--amber-tx);font-size:8px;font-weight:600">SPLIT</text>
+    <line x1="365" y1="200" x2="655" y2="200" class="line-b" marker-end="url(#ar)"/>
+    <text class="st sb" x="500" y="196">x100 envios</text>
+    <rect x="595" y="221" width="56" height="20" rx="3" fill="var(--amber-bg)" stroke="none"/>
+    <text class="st sb" x="623" y="234" text-anchor="middle" style="fill:var(--amber-tx);font-weight:600">1 hoje</text>
+    <text class="st sb" x="623" y="253" text-anchor="middle" style="fill:var(--red-tx)">100 futuro</text>
+
+    <!-- Pattern C -->
+    <text class="st sh" x="16" y="280" style="fill:var(--green)">C</text>
+    <text class="st sb" x="32" y="280">batch puro</text>
+    <line x1="60" y1="285" x2="355" y2="285" class="line-c" marker-end="url(#ar)"/>
+    <text class="st sb" x="200" y="280">1 lote</text>
+    <line x1="365" y1="285" x2="655" y2="285" class="line-c" marker-end="url(#ar)"/>
+    <text class="st sb" x="500" y="280">1 lote</text>
+    <rect x="595" y="271" width="56" height="20" rx="3" fill="var(--green-bg)" stroke="none"/>
+    <text class="st sb" x="623" y="284" text-anchor="middle" style="fill:var(--green-tx);font-weight:600">1 msg</text>
+  </svg>
+
+  <svg class="svg-mobile" width="100%" viewBox="0 0 300 460" style="margin:1.25rem 0 0.5rem">
+    <defs>
+      <marker id="arm" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 2L8 5L2 8" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round"/></marker>
+    </defs>
+
+    <text font-family="var(--font)" font-size="13" font-weight="600" fill="var(--tx)" x="150" y="18" text-anchor="middle">Três formas de enviar 100 docs</text>
+
+    <!-- Systems -->
+    <rect x="10" y="32" width="56" height="28" fill="var(--bg3)" stroke="var(--bd)" stroke-width="0.75" rx="6"/>
+    <text font-family="var(--font)" font-size="12" fill="var(--tx2)" x="38" y="50" text-anchor="middle">ERP</text>
+    <rect x="108" y="32" width="84" height="28" fill="var(--purple-bg)" stroke="var(--bd)" stroke-width="0.75" rx="6"/>
+    <text font-family="var(--font)" font-size="12" fill="var(--tx2)" x="150" y="50" text-anchor="middle">Cloud Integ.</text>
+    <rect x="234" y="32" width="56" height="28" fill="var(--bg3)" stroke="var(--bd)" stroke-width="0.75" rx="6"/>
+    <text font-family="var(--font)" font-size="12" fill="var(--tx2)" x="262" y="50" text-anchor="middle">Externo</text>
+
+    <!-- Lifelines -->
+    <line x1="38" y1="60" x2="38" y2="440" stroke="var(--bd)" stroke-width="0.5" stroke-dasharray="3 3"/>
+    <line x1="150" y1="60" x2="150" y2="440" stroke="var(--bd)" stroke-width="0.5" stroke-dasharray="3 3"/>
+    <line x1="262" y1="60" x2="262" y2="440" stroke="var(--bd)" stroke-width="0.5" stroke-dasharray="3 3"/>
+
+    <!-- Pattern A -->
+    <text font-family="var(--font)" font-size="13" font-weight="600" fill="var(--red)" x="6" y="95">A</text>
+    <text font-family="var(--font)" font-size="11" fill="var(--tx3)" x="20" y="95">doc-a-doc</text>
+    <line x1="38" y1="102" x2="145" y2="102" stroke="var(--red)" stroke-width="1.5" marker-end="url(#arm)"/>
+    <text font-family="var(--font)" font-size="11" fill="var(--tx3)" x="92" y="98" text-anchor="middle">x100</text>
+    <line x1="155" y1="102" x2="257" y2="102" stroke="var(--red)" stroke-width="1.5" marker-end="url(#arm)"/>
+    <text font-family="var(--font)" font-size="11" fill="var(--tx3)" x="206" y="98" text-anchor="middle">x100</text>
+    <rect x="92" y="125" width="62" height="22" rx="4" fill="var(--red-bg)" stroke="none"/>
+    <text font-family="var(--font)" font-size="11" fill="var(--red-tx)" font-weight="600" x="123" y="140" text-anchor="middle">100 msgs</text>
+
+    <!-- Pattern B -->
+    <text font-family="var(--font)" font-size="13" font-weight="600" fill="var(--amber)" x="6" y="185">B</text>
+    <text font-family="var(--font)" font-size="11" fill="var(--tx3)" x="20" y="185">batch + split</text>
+    <line x1="38" y1="192" x2="145" y2="192" stroke="var(--amber)" stroke-width="1.5" marker-end="url(#arm)"/>
+    <text font-family="var(--font)" font-size="11" fill="var(--tx3)" x="92" y="188" text-anchor="middle">1 lote</text>
+    <rect x="132" y="200" width="36" height="16" rx="2" fill="var(--amber-bg)" stroke="var(--bd)" stroke-width="0.5"/>
+    <text font-family="var(--font)" font-size="9" fill="var(--amber-tx)" font-weight="600" x="150" y="212" text-anchor="middle">SPLIT</text>
+    <line x1="155" y1="222" x2="257" y2="222" stroke="var(--amber)" stroke-width="1.5" marker-end="url(#arm)"/>
+    <text font-family="var(--font)" font-size="11" fill="var(--tx3)" x="206" y="218" text-anchor="middle">x100</text>
+    <rect x="72" y="244" width="104" height="38" rx="4" fill="var(--amber-bg)" stroke="none"/>
+    <text font-family="var(--font)" font-size="11" fill="var(--amber-tx)" font-weight="600" x="124" y="260" text-anchor="middle">1 msg hoje</text>
+    <text font-family="var(--font)" font-size="11" fill="var(--red-tx)" font-weight="600" x="124" y="276" text-anchor="middle">100 msgs futuro</text>
+
+    <!-- Pattern C -->
+    <text font-family="var(--font)" font-size="13" font-weight="600" fill="var(--green)" x="6" y="315">C</text>
+    <text font-family="var(--font)" font-size="11" fill="var(--tx3)" x="20" y="315">batch puro</text>
+    <line x1="38" y1="322" x2="145" y2="322" stroke="var(--green)" stroke-width="1.5" marker-end="url(#arm)"/>
+    <text font-family="var(--font)" font-size="11" fill="var(--tx3)" x="92" y="318" text-anchor="middle">1 lote</text>
+    <line x1="155" y1="322" x2="257" y2="322" stroke="var(--green)" stroke-width="1.5" marker-end="url(#arm)"/>
+    <text font-family="var(--font)" font-size="11" fill="var(--tx3)" x="206" y="318" text-anchor="middle">1 lote</text>
+    <rect x="92" y="335" width="62" height="22" rx="4" fill="var(--green-bg)" stroke="none"/>
+    <text font-family="var(--font)" font-size="11" fill="var(--green-tx)" font-weight="600" x="123" y="350" text-anchor="middle">1 msg</text>
+  </svg>
+
+  <p class="scenario-foot">O simulador abaixo calcula o consumo real para cada pattern com os seus volumes. Ajuste os sliders para refletir o seu cenário.</p>
+</div>
+
+<h2><span class="num">1</span>Parâmetros do cenário</h2>
+<div class="controls">
+  <div class="ctrl">
+    <label>Documentos por execução</label>
+    <input type="range" min="1" max="500" value="100" step="1" id="docs" oninput="calc()">
+    <span class="out" id="docs-v">100</span>
+  </div>
+  <div class="ctrl">
+    <label>Tamanho por documento</label>
+    <input type="range" min="1" max="300" value="3" step="1" id="docsize" oninput="calc()">
+    <span class="out" id="docsize-v">3 KB</span>
+  </div>
+  <div class="ctrl">
+    <label>Execuções por dia</label>
+    <input type="range" min="1" max="200" value="20" step="1" id="runs" oninput="calc()">
+    <span class="out" id="runs-v">20</span>
+  </div>
+</div>
+
+<h2><span class="num">2</span>Consumo por pattern</h2>
+<div class="grid3">
+  <div class="card">
+    <h3>Pattern A: doc-a-doc</h3>
+    <div class="sub">ERP faz loop, 1 chamada por documento</div>
+    <div class="hint">Migração PI/PO direta sem redesign</div>
+    <div class="sep"></div>
+    <div class="metric-label">Messages/dia <span class="tag tag-r">hoje</span></div>
+    <div class="val bad" id="a-today">2,000</div>
+    <div class="metric-label">Messages/dia <span class="tag tag-r">futuro</span></div>
+    <div class="val warn" id="a-future">2,000</div>
+    <div class="sep"></div>
+    <div class="metric-label">Messages/mês <span class="tag tag-r">hoje</span></div>
+    <div class="val muted" id="a-month">60,000</div>
+    <div class="metric-label">Messages/mês <span class="tag tag-r">futuro</span></div>
+    <div class="val muted" id="a-month-future">60,000</div>
+  </div>
+
+  <div class="card danger">
+    <h3>Pattern B: batch + splitter</h3>
+    <div class="sub">ERP envia lote, CPI faz split e envia 1:1</div>
+    <div class="hint">Otimização parcial — bomba-relógio</div>
+    <div class="sep"></div>
+    <div class="metric-label">Messages/dia <span class="tag tag-g">hoje</span></div>
+    <div class="val good" id="b-today">20</div>
+    <div class="metric-label">Messages/dia <span class="tag tag-r">futuro</span></div>
+    <div class="val bad" id="b-future">2,000</div>
+    <div class="sep"></div>
+    <div class="metric-label">Messages/mês <span class="tag tag-g">hoje</span></div>
+    <div class="val muted" id="b-month">600</div>
+    <div class="metric-label">Messages/mês <span class="tag tag-r">futuro</span></div>
+    <div class="val muted" id="b-month-future">60,000</div>
+  </div>
+
+  <div class="card highlight">
+    <h3>Pattern C: batch puro</h3>
+    <div class="sub">CPI processa lote inteiro, envia em batch</div>
+    <div class="hint">Otimizado para metering</div>
+    <div class="sep"></div>
+    <div class="metric-label">Messages/dia <span class="tag tag-g">hoje</span></div>
+    <div class="val good" id="c-today">20</div>
+    <div class="metric-label">Messages/dia <span class="tag tag-g">futuro</span></div>
+    <div class="val good" id="c-future">20</div>
+    <div class="sep"></div>
+    <div class="metric-label">Messages/mês <span class="tag tag-g">hoje</span></div>
+    <div class="val muted" id="c-month">600</div>
+    <div class="metric-label">Messages/mês <span class="tag tag-g">futuro</span></div>
+    <div class="val muted" id="c-month-future">600</div>
+  </div>
+</div>
+
+<h2><span class="num">3</span>Impacto</h2>
+<div class="grid2">
+  <div class="card">
+    <h3>Economia mensal: A → C</h3>
+    <div class="sub">Se migrar de doc-a-doc para batch puro</div>
+    <div class="sep"></div>
+    <div class="val good" id="saving-ac">--</div>
+    <div style="font-size:0.85rem;color:var(--tx2)" id="saving-ac-pct"></div>
+  </div>
+  <div class="card">
+    <h3>Bomba-relógio: Pattern B</h3>
+    <div class="sub">Quando SAP ativar size metering</div>
+    <div class="sep"></div>
+    <div class="val bad" id="bomb">--</div>
+    <div style="font-size:0.85rem;color:var(--tx2)" id="bomb-pct"></div>
+  </div>
+</div>
+
+<div class="summary" id="summary"></div>
+
+<div class="footnotes">
+  <h3>Sobre este simulador</h3>
+  <p>Este simulador aplica-se exclusivamente à capability <strong>Cloud Integration</strong> do SAP Integration Suite. Outras capabilities (API Management, Event Mesh, OData Provisioning) têm regras de metering diferentes. As regras de cálculo seguem o <a href="https://me.sap.com/notes/2942344/E" target="_blank" rel="noopener">SAP Note 2942344</a> (v23, 17.06.2025) — "SAP Integration Suite - Message Metric Definition".</p>
+
+  <div class="note-box">
+    <strong>Limitation ativa (mar/2026):</strong> O SAP Note declara: <em>"Message size measurement is not available as of now. Until it gets available, every integration flow execution with 1 or more receiver adapters will be counted as 1 message irrespective of message size."</em> Isso significa que hoje 1 execução = 1 message, independente do payload. A coluna "futuro" projeta o cenário quando a SAP remover esta limitation e ativar o metering por tamanho (250KB por message). Não há data confirmada para esta ativação.
+  </div>
+
+  <h3>Regras de metering aplicadas</h3>
+  <ul>
+    <li><strong>Regra base:</strong> Tamanho agregado de outbound via receiver adapter(s). Cada bloco de 250KB (ou fração) = 1 message. Request + response somam.</li>
+    <li><strong>Splitter:</strong> Cada split outbound via receiver adapter é uma message separada (sujeita à regra de 250KB individualmente).</li>
+    <li><strong>JMS / Process Direct:</strong> Mensagens via esses adapters são excluídas do metering — são internas ao tenant.</li>
+    <li><strong>Retry:</strong> Cada retry via receiver adapter conta como message separada.</li>
+    <li><strong>DEV/QAS/PRD:</strong> Todas as landscapes contam. Sem isenção para ambientes de teste.</li>
+    <li><strong>SAP-to-SAP:</strong> Mensagens via packages SAP standard não editados são gratuitas.</li>
+  </ul>
+
+  <h3>Referências da comunidade</h3>
+  <ul>
+    <li><a href="https://community.sap.com/t5/technology-blog-posts-by-sap/sap-btp-integration-suite-new-message-metrics/ba-p/13638342" target="_blank" rel="noopener">SAP Community — New Message Metrics</a> — Detalhamento oficial do metering com perguntas da comunidade sobre Splitter, APIs de consumo e SAP-to-SAP.</li>
+    <li><a href="https://community.sap.com/t5/technology-blog-posts-by-sap/5-tips-to-keep-your-messages-under-control-in-sap-integration-suite/ba-p/13573871" target="_blank" rel="noopener">SAP Community — 5 Tips to Keep Messages Under Control</a> — Recomendações oficiais da SAP incluindo uso de ProcessDirect e estratégias event-driven.</li>
+    <li><a href="https://community.sap.com/t5/technology-blog-posts-by-sap/sap-integration-suite-cloud-integration-message-usage-analytics-details/ba-p/14282648" target="_blank" rel="noopener">SAP Community — Message Usage Analytics Details (Dez/2025)</a> — Relatório consolidado mensal por iFlow com breakdown de Splitter, Retry e SAP-to-SAP.</li>
+    <li><a href="https://www.integration-excellence.com/message-traffic-licensing-with-sap-integration-suite/" target="_blank" rel="noopener">integration://excellence — Message Traffic Licensing</a> — Análise independente com cálculos de custo por message e cenários de Splitter.</li>
+    <li><a href="https://community.sap.com/t5/technology-blog-posts-by-members/bandwidth-consumption-metric-cloud-integration/ba-p/14113452" target="_blank" rel="noopener">SAP Community — Bandwidth Consumption Metric</a> — Cenários reais de otimização: bulk insert vs individual e design para minimizar outbound.</li>
+    <li><a href="https://mdpgroup.com/en/blog/message-metric-calculations-sap-integration-suite/" target="_blank" rel="noopener">MDP Group — Message Metric Calculations</a> — Guia prático com exemplos de Splitter, sync calls e retry.</li>
+  </ul>
+
+  <h3>Status da ferramenta de medição da SAP</h3>
+  <p>Até março/2026, a SAP não publicou roadmap com data para ativação do size metering. O SAP Note 2942344 mantém a limitation como <em>"until it gets available"</em> desde sua primeira versão. Na comunidade, há pedidos ativos para publicação da API de metering (<code>/rest/api/v1/metering/usage/</code>) como endpoint oficial — hoje ela é interna. A funcionalidade de "Message Usage Analytics" no monitor do CPI (dez/2025) mostra breakdown por iFlow, mas ainda conta 1 execution = 1 message conforme a limitation.</p>
+</div>
+
+<footer>
+  <span>Aurynis — CPI Governance Platform</span>
+  <a href="https://me.sap.com/notes/2942344/E" target="_blank" rel="noopener">SAP Note 2942344 v23</a>
+</footer>
+
+</div>
+
+<script>
+function $(id){return document.getElementById(id)}
+function fmt(n){return n.toLocaleString('pt-BR')}
+
+function calc(){
+  var docs = +$('docs').value;
+  var sz   = +$('docsize').value;
+  var runs = +$('runs').value;
+
+  $('docs-v').textContent = fmt(docs);
+  $('docsize-v').textContent = sz + ' KB';
+  $('runs-v').textContent = fmt(runs);
+
+  // Messages por documento individual (regra 250KB)
+  var msgsPerDoc = Math.ceil(sz / 250);
+
+  // Pattern A: doc-a-doc
+  // Cada doc = 1 execução separada (loop no ERP).
+  // Hoje (limitation): 1 exec = 1 msg.
+  // Futuro (size metering): ceil(docSize/250) msgs por exec.
+  var aToday  = docs * runs;
+  var aFuture = docs * msgsPerDoc * runs;
+
+  // Pattern B: batch inbound + splitter outbound
+  // 1 execução por run. Splitter gera N splits.
+  // Hoje (limitation): 1 exec = 1 msg (splits invisíveis).
+  // Futuro: cada split = msg separada, sujeita a 250KB.
+  var bToday  = runs;
+  var bFuture = docs * msgsPerDoc * runs;
+
+  // Pattern C: batch puro
+  // 1 execução por run. Payload agregado = docs * docSize.
+  // Hoje (limitation): 1 exec = 1 msg.
+  // Futuro: ceil(aggregatedPayload/250) msgs por exec.
+  var totalPayloadPerRun = docs * sz;
+  var msgsPerRunFuture   = Math.ceil(totalPayloadPerRun / 250);
+  var cToday  = runs;
+  var cFuture = msgsPerRunFuture * runs;
+
+  $('a-today').textContent  = fmt(aToday);
+  $('a-future').textContent = fmt(aFuture);
+  $('a-month').textContent  = fmt(aToday * 30);
+  $('a-month-future').textContent = fmt(aFuture * 30);
+  $('b-today').textContent  = fmt(bToday);
+  $('b-future').textContent = fmt(bFuture);
+  $('b-month').textContent  = fmt(bToday * 30);
+  $('b-month-future').textContent = fmt(bFuture * 30);
+  $('c-today').textContent  = fmt(cToday);
+  $('c-future').textContent = fmt(cFuture);
+  $('c-month').textContent  = fmt(cToday * 30);
+  $('c-month-future').textContent = fmt(cFuture * 30);
+
+  $('a-today').className  = 'val bad';
+  $('a-future').className = 'val bad';
+  $('a-month').className  = 'val bad';
+  $('a-month-future').className = 'val bad';
+  $('b-today').className  = 'val good';
+  $('b-future').className = 'val ' + (bFuture > bToday * 2 ? 'bad' : 'good');
+  $('b-month').className  = 'val good';
+  $('b-month-future').className = 'val ' + (bFuture > bToday * 2 ? 'bad' : 'good');
+  $('c-today').className  = 'val good';
+  $('c-future').className = 'val ' + (cFuture > cToday * 3 ? 'warn' : 'good');
+  $('c-month').className  = 'val good';
+  $('c-month-future').className = 'val ' + (cFuture > cToday * 3 ? 'warn' : 'good');
+
+  var aMo = aToday * 30;
+  var cMo = cToday * 30;
+  var saveMo  = aMo - cMo;
+  var savePct = aMo > 0 ? Math.round((saveMo / aMo) * 100) : 0;
+  $('saving-ac').textContent = fmt(saveMo) + ' msgs/mês';
+  $('saving-ac-pct').textContent = savePct + '% de redução no consumo de licença';
+
+  var bTodayMo  = bToday * 30;
+  var bFutureMo = bFuture * 30;
+  var bombDiff  = bFutureMo - bTodayMo;
+  var bombX     = bTodayMo > 0 ? Math.round(bFutureMo / bTodayMo) : 0;
+  $('bomb').textContent = '+' + fmt(bombDiff) + ' msgs/mês';
+  $('bomb-pct').textContent = 'Aumento de ' + fmt(bombX) + 'x quando metering ativar';
+
+  var totalPayloadMonth = totalPayloadPerRun * runs * 30;
+  var totalPayloadMB = Math.round(totalPayloadMonth / 1024);
+  $('summary').innerHTML =
+    '<strong>Resumo do cenário:</strong> ' +
+    fmt(docs) + ' documentos de ' + sz + ' KB, ' + fmt(runs) + ' execuções/dia. ' +
+    'Volume mensal estimado: ' + fmt(totalPayloadMB) + ' MB. ' +
+    'Pattern A consome <strong>' + fmt(aMo) + '</strong> msgs/mês. ' +
+    'Pattern C consome <strong>' + fmt(cMo) + '</strong> msgs/mês' +
+    (cMo < aMo ? ' — economia de <strong>' + savePct + '%</strong>.' : '.') +
+    (bombX > 5
+      ? ' O Pattern B é uma bomba-relógio: hoje parece eficiente (' + fmt(bTodayMo) + ' msgs), mas quando a SAP ativar size metering vai saltar para <strong>' + fmt(bFutureMo) + '</strong> msgs/mês.'
+      : '');
+}
+
+calc();
+</script>
+</body>
+</html>
